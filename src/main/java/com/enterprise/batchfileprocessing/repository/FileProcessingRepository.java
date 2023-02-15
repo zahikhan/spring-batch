@@ -1,7 +1,8 @@
 package com.enterprise.batchfileprocessing.repository;
 
-import com.enterprise.batchfileprocessing.entity.Schema;
+import com.enterprise.batchfileprocessing.entities.FileStructure;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -14,5 +15,5 @@ import org.springframework.stereotype.Repository;
  * @since 1.0
  */
 @Repository
-public interface FileProcessingRepository extends JpaRepository<Schema,Long> {
+public interface FileProcessingRepository extends CrudRepository<FileStructure,Long> {
 }
