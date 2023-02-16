@@ -1,11 +1,10 @@
 package com.enterprise.batchfileprocessing.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
-
+import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 
 /**
@@ -22,6 +21,7 @@ import lombok.Data;
 @Data
 public class FileStructure {
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     long id;
     private String guid;
     private String sensitiveData;

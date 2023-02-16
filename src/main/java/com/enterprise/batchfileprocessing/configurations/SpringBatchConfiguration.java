@@ -3,14 +3,10 @@ package com.enterprise.batchfileprocessing.configurations;
 import com.enterprise.batchfileprocessing.entities.FileStructure;
 import com.enterprise.batchfileprocessing.repository.FileProcessingRepository;
 import lombok.AllArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
-import org.springframework.batch.core.configuration.support.DefaultBatchConfiguration;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
-import org.springframework.batch.core.repository.support.JobRepositoryFactoryBean;
 import org.springframework.batch.core.step.builder.StepBuilder;
 import org.springframework.batch.item.data.RepositoryItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
@@ -18,8 +14,7 @@ import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
-import org.springframework.batch.support.DatabaseType;
-import org.springframework.batch.support.transaction.ResourcelessTransactionManager;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
@@ -28,7 +23,6 @@ import org.springframework.core.task.TaskExecutor;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.transaction.PlatformTransactionManager;
 
-import javax.sql.DataSource;
 import java.net.URL;
 
 /**
@@ -42,23 +36,9 @@ import java.net.URL;
  */
 @Configuration
 @AllArgsConstructor
-public class SpringBatchConfiguration extends DefaultBatchConfiguration {
+public class SpringBatchConfiguration  {
     private static final String DELIMITER = "|";
     private final FileProcessingRepository fileRepository;
-
-    private DataSource dataSource;
-
-    @Bean
-    @SneakyThrows
-    @Override
-    public JobRepository jobRepository() {
-        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
-        factory.setDataSource(dataSource);
-        factory.setDatabaseType(DatabaseType.MYSQL.getProductName());
-        factory.setTransactionManager(transactionManager());
-        factory.afterPropertiesSet();
-        return factory.getObject();
-    }
 
     @Bean
     public PlatformTransactionManager transactionManager() {
@@ -107,34 +87,32 @@ public class SpringBatchConfiguration extends DefaultBatchConfiguration {
     }
 
     @Bean
-    Step step1() {
+    @Autowired
+    Step step1(JobRepository jobRepository) {
         PlatformTransactionManager transactionManager = transactionManager();
-        StepBuilder stepBuilder = new StepBuilder("transform", jobRepository());
+        StepBuilder stepBuilder = new StepBuilder("transform", jobRepository);
         return stepBuilder
-                .<FileStructure, FileStructure>chunk(1, transactionManager)
+                .<FileStructure, FileStructure>chunk(5, transactionManager)
                 .reader(reader())
                 .processor(processor())
                 .writer(writer())
-//                .taskExecutor(taskExecutor())
+                .taskExecutor(taskExecutor())
                 .build();
     }
-
-
-
-
 
     @Bean
-    Job job( ) {
-        JobBuilder jobBuilderFactory = new JobBuilder("CARD_EXTRACT_MT", jobRepository());
-        return jobBuilderFactory.flow(step1()).end()
+    @Autowired
+    Job job(JobRepository jobRepository) {
+        JobBuilder jobBuilderFactory = new JobBuilder("CARD_EXTRACT_MT", jobRepository );
+        return jobBuilderFactory.flow(step1(jobRepository)).end()
                 .build();
     }
 
-/*    @Bean
+    @Bean
     public TaskExecutor taskExecutor() {
         SimpleAsyncTaskExecutor asyncTaskExecutor = new SimpleAsyncTaskExecutor();
         asyncTaskExecutor.setConcurrencyLimit(10);
         return asyncTaskExecutor;
-    }*/
+    }
 }
 
